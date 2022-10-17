@@ -1,1 +1,0 @@
-cmd_/home/liao/Desktop/Github/111-1-Embedding-System/homework1/fileIO/Module.symvers := sed 's/\.ko$$/\.o/' /home/liao/Desktop/Github/111-1-Embedding-System/homework1/fileIO/modules.order | scripts/mod/modpost -m -a  -o /home/liao/Desktop/Github/111-1-Embedding-System/homework1/fileIO/Module.symvers -e -i Module.symvers   -T -
