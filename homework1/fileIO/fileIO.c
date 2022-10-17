@@ -23,9 +23,9 @@ int read_file(void){
     char tmp_char[100];
     memset(tmp_char, 0, sizeof(tmp_char));
 
-    io = filp_open("input.txt", O_RDONLY, 0);
+    io = filp_open("input.txt", O_GREAT | O_RDONLY, 0);
     if (IS_ERR(io)){
-        printk("create file error/n");
+        printk("open file error/n");
         return -1;
     }
     count = sizeof(tmp_char);
@@ -45,14 +45,14 @@ int write_file(void){
     char *tmp_char = "hello world";
     //memset(tmp_char, 0, sizeof(tmp_char));
 
-    io = filp_open("input.txt", O_RDONLY, 0);
+    io = filp_open("output.txt", O_GREAT | O_RDWR, 0664);
     if (IS_ERR(io)){
-        printk("create file error/n");
+        printk("open file error/n");
         return -1;
     }
     count = strlen(tmp_char) + 1;
     buf = (void *)(&tmp_char);
-    tx = kernel_read(io, buf, count, &pos);
+    tx = kernel_write(io, buf, count, &pos);
     //printk("%s, read result: tmp_char=%s\n", __func__, tmp_char);
     filp_close(io, NULL);
     return 0;
@@ -67,14 +67,13 @@ static int fileIO_init(void)
         return -1;
     }
     */
-    int status = read_file();
-    status = write_file();
-    return 0;
+    //int status = read_file();
+    return write_file();
 } 
  
 static void fileIO_exit(void) 
 { 
-
+    printk("remove successfully\n");
 } 
 module_init(fileIO_init); 
 module_exit(fileIO_exit); 
