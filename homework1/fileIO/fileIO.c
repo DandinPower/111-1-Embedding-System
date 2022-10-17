@@ -9,66 +9,72 @@
 #include <linux/mm.h> 
 #include <asm/uaccess.h> 
  
-mm_segment_t oldfs; 
- 
-struct file *openFile(char *path,int flag,int mode) 
-{ 
-struct file *fp; 
- 
-fp=filp_open(path, flag, 0); 
-if (fp) return fp; 
-else return NULL; 
-} 
- 
-int readFile(struct file *fp,char *buf,int readlen) 
-{ 
-if (fp->f_op && fp->f_op->read) 
-return fp->f_op->read(fp,buf,readlen, &fp->f_pos); 
-else 
-return -1; 
-} 
- 
-int closeFile(struct file *fp) 
-{ 
-filp_close(fp,NULL); 
-return 0; 
-} 
- 
-void initKernelEnv(void) 
-{ 
-oldfs = get_fs(); 
-set_fs(KERNEL_DS); 
-} 
- 
-static int __init readfile_init(void) 
-{ 
-char buf[1024]; 
-struct file *fp; 
-int ret; 
- 
-initKernelEnv(); 
-fp=openFile("/etc/myconfig",O_RDONLY,0); 
-if (fp!=NULL) 
-{ 
-memset(buf,0,1024); 
-if ((ret=readFile(fp,buf,1024))>0) 
-printk("buf:%s\n",buf); 
-else printk("read file error %d\n",ret); 
-closeFile(fp); 
-} 
-set_fs(oldfs); 
-return 0; 
-} 
- 
-static void __exit readfile_exit(void) 
-{ 
- 
-printk("read file module remove successfully\n"); 
-} 
-module_init(readfile_init); 
-module_exit(readfile_exit); 
- 
-MODULE_DESCRIPTION("read a file in kernel module"); 
-MODULE_AUTHOR("Joey Cheng<jemicheng@gmail.com>"); 
+MODULE_DESCRIPTION("read file in and write it out in inverse"); 
+MODULE_AUTHOR("Yong-Cheng Liao<tomhot246@gmail.com>"); 
+MODULE_ALIAS("read file & write file module");
 MODULE_LICENSE("GPL"); 
-MODULE_ALIAS("read file module");
+
+int read_file(void){
+    struct file *io;
+    void *buf;
+    size_t count;
+    loff_t pos = 0;
+    ssize_t rx;
+    char tmp_char[100];
+    memset(tmp_char, 0, sizeof(tmp_char));
+
+    io = filp_open("input.txt", O_RDONLY, 0);
+    if (IS_ERR(io)){
+        printk("create file error/n");
+        return -1;
+    }
+    count = sizeof(tmp_char);
+    buf = (void *)(&tmp_char);
+    rx = kernel_read(io, buf, count, &pos);
+    printk("%s, read result: tmp_char=%s\n", __func__, tmp_char);
+    filp_close(io, NULL);
+    return 0;
+}
+
+int write_file(void){
+    struct file *io;
+    void *buf;
+    size_t count;
+    loff_t pos = 0;
+    ssize_t tx;
+    char *tmp_char = "hello world";
+    //memset(tmp_char, 0, sizeof(tmp_char));
+
+    io = filp_open("input.txt", O_RDONLY, 0);
+    if (IS_ERR(io)){
+        printk("create file error/n");
+        return -1;
+    }
+    count = strlen(tmp_char) + 1;
+    buf = (void *)(&tmp_char);
+    tx = kernel_read(io, buf, count, &pos);
+    //printk("%s, read result: tmp_char=%s\n", __func__, tmp_char);
+    filp_close(io, NULL);
+    return 0;
+}
+
+static int fileIO_init(void) 
+{ 
+    /*
+    io = filp_open("output.txt", O_RDWR, 0664);
+    if (IS_ERR(io)){
+        printk("create file error/n");
+        return -1;
+    }
+    */
+    int status = read_file();
+    status = write_file();
+    return 0;
+} 
+ 
+static void fileIO_exit(void) 
+{ 
+
+} 
+module_init(fileIO_init); 
+module_exit(fileIO_exit); 
