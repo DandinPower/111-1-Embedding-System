@@ -4,6 +4,7 @@
 #include <linux/fs.h> 
 #include<linux/slab.h>
 #include <linux/cdev.h>
+#include <asm/uaccess.h>
 
 #define DRIVER_BUFFER_SIZE 9999
 #define MY_MAJOR       42
@@ -13,46 +14,58 @@ MODULE_DESCRIPTION("A Simple Character device Driver");
 MODULE_AUTHOR("Yong-Cheng Liao<tomhot246@gmail.com>"); 
 MODULE_LICENSE("GPL"); 
 
-struct charIO_device_data {
+typedef struct {
 	struct cdev cdev;
-};
+    char *buffer;
+    int size;
+} charIO_device_data_t;
 
-struct charIO_device_data devs[MY_MAX_MINORS];
+charIO_device_data_t devs[MY_MAX_MINORS];
 
 //char* buffer;
 int i, j, err;
 
-/*
-void allocate_buffer(char *str){
-    buffer = (char *)kmalloc( DRIVER_BUFFER_SIZE, GFP_KERNEL);
-    for (i=0; i<strlen(str); i++){
-        buffer[i] = str[i];
-    }
-}*/
+void allocate_buffer(charIO_device_data_t *dev){
+    dev->size = DRIVER_BUFFER_SIZE;
+    dev->buffer = (char *)kmalloc( dev->size, GFP_KERNEL);
+}
+
+void free_buffer(charIO_device_data_t *dev){
+    kfree(dev->buffer);
+}
 
 static int char_open(struct inode *inode, struct file *file)
 {
-	struct charIO_device_data *my_data;
-
-    my_data = container_of(inode->i_cdev, struct charIO_device_data, cdev);
-
+	charIO_device_data_t *my_data = container_of(inode->i_cdev, charIO_device_data_t, cdev);
     file->private_data = my_data;
+    allocate_buffer(my_data);
 	return 0;
 }
 
 static ssize_t char_read(struct file *file, char __user *user_buffer,
 					size_t size, loff_t *offset)
 {
-	struct charIO_device_data *my_data;
-
-    my_data = (struct charIO_device_data *) file->private_data;
-	return 0;
+	charIO_device_data_t *my_data = file->private_data;
+    ssize_t len = min(my_data->size - *offset, size);
+    if (len <= 0)
+        return 0;
+    if (copy_to_user(user_buffer, my_data->buffer + *offset, len))
+        return -EFAULT;
+    *offset += len;
+    return len;
 }
 
 static ssize_t  char_write(struct file *file, const char __user *user_buffer,
 					size_t size, loff_t * offset)
 {
-	return 0;
+    charIO_device_data_t *my_data = file->private_data;
+	ssize_t len = min(my_data->size - *offset, size);
+    if (len <= 0)
+        return 0;
+    if (copy_from_user(my_data->buffer + *offset, user_buffer, len))
+        return -EFAULT;
+    *offset += len;
+    return len;
 }
 
 static int  char_release(struct inode *inode , struct file *filp)
@@ -73,12 +86,10 @@ static int charIO_init(void)
     err = register_chrdev_region(MKDEV(MY_MAJOR, 0), MY_MAX_MINORS,
                                  "my_device_driver");
     if (err != 0) {
-        /* report error */
         return err;
     }
 
     for(i = 0; i < MY_MAX_MINORS; i++) {
-        /* initialize devs[i] fields */
         cdev_init(&devs[i].cdev, &charIO_fops);
         cdev_add(&devs[i].cdev, MKDEV(MY_MAJOR, i), 1);
     }
@@ -90,7 +101,6 @@ static int charIO_init(void)
 static void charIO_exit(void) 
 { 
     for(i = 0; i < MY_MAX_MINORS; i++) {
-        /* release devs[i] fields */
         cdev_del(&devs[i].cdev);
     }
     unregister_chrdev_region(MKDEV(MY_MAJOR, 0), MY_MAX_MINORS);
