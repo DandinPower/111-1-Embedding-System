@@ -22,8 +22,6 @@ typedef struct {
 
 charIO_device_data_t devs[MY_MAX_MINORS];
 
-//test
-//char* buffer;
 int i, j, err;
 
 void allocate_buffer(charIO_device_data_t *dev){
@@ -51,9 +49,6 @@ static ssize_t char_read(struct file *file, char __user *user_buffer,
     ssize_t len = min(my_data->size - *offset, size);
     if (len <= 0)
         return 0;
-    printk("read len:%d\n", len);
-    printk("read offset:%d\n", *offset);
-    printk("read:%s\n", my_data->buffer);
     if (copy_to_user(user_buffer, my_data->buffer + *offset, len))
         return -EFAULT;
     *offset += len;
@@ -63,6 +58,7 @@ static ssize_t char_read(struct file *file, char __user *user_buffer,
 static ssize_t  char_write(struct file *file, const char __user *user_buffer,
 					size_t size, loff_t * offset)
 {
+    *offset = 0;
     charIO_device_data_t *my_data = file->private_data;
 	ssize_t len = min(my_data->size - *offset, size);
     if (len <= 0)
@@ -88,8 +84,7 @@ const struct file_operations charIO_fops = {
 
 static int charIO_init(void) 
 { 
-    err = register_chrdev_region(MKDEV(MY_MAJOR, 0), MY_MAX_MINORS,
-                                 "my_device_driver");
+    err = register_chrdev_region(MKDEV(MY_MAJOR, 0), MY_MAX_MINORS,"my_device_driver");
     if (err != 0) {
         return err;
     }
