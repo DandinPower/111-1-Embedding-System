@@ -46,10 +46,14 @@ static int char_open(struct inode *inode, struct file *file)
 static ssize_t char_read(struct file *file, char __user *user_buffer,
 					size_t size, loff_t *offset)
 {
+    *offset = 0;
 	charIO_device_data_t *my_data = file->private_data;
     ssize_t len = min(my_data->size - *offset, size);
     if (len <= 0)
         return 0;
+    printk("read len:%d\n", len);
+    printk("read offset:%d\n", *offset);
+    printk("read:%s\n", my_data->buffer);
     if (copy_to_user(user_buffer, my_data->buffer + *offset, len))
         return -EFAULT;
     *offset += len;
