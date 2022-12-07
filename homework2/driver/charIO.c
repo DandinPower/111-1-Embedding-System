@@ -22,6 +22,7 @@ typedef struct {
 
 charIO_device_data_t devs[MY_MAX_MINORS];
 
+//test
 //char* buffer;
 int i, j, err;
 
