@@ -24,21 +24,19 @@ charIO_device_data_t devs[MY_MAX_MINORS];
 int i, err;
 
 static int char_open(struct inode *inode, struct file *file) {
-	charIO_device_data_t *my_data = container_of(inode->i_cdev, charIO_device_data_t, cdev);
+    charIO_device_data_t *my_data = container_of(inode->i_cdev, charIO_device_data_t, cdev);
     file->private_data = my_data;
     my_data->size = DRIVER_BUFFER_SIZE;
     my_data->buffer = (char *)kmalloc( my_data->size, GFP_KERNEL);
-	return 0;
+    return 0;
 }
 
 static ssize_t char_read(struct file *file, char __user *user_buffer, size_t size, loff_t *offset) {
     *offset = 0;
-	charIO_device_data_t *my_data = file->private_data;
+    charIO_device_data_t *my_data = file->private_data;
     ssize_t len = min(my_data->size - *offset, size);
-    if (len <= 0)
-        return 0;
-    if (copy_to_user(user_buffer, my_data->buffer + *offset, len))
-        return -EFAULT;
+    if (len <= 0) return 0;
+    if (copy_to_user(user_buffer, my_data->buffer + *offset, len)) return -EFAULT;
     printk("read kernel buffer: %s\n", my_data->buffer);
     *offset += len;
     return len;
@@ -47,11 +45,9 @@ static ssize_t char_read(struct file *file, char __user *user_buffer, size_t siz
 static ssize_t  char_write(struct file *file, const char __user *user_buffer, size_t size, loff_t * offset) {
     *offset = 0;
     charIO_device_data_t *my_data = file->private_data;
-	ssize_t len = min(my_data->size - *offset, size);
-    if (len <= 0)
-        return 0;
-    if (copy_from_user(my_data->buffer + *offset, user_buffer, len))
-        return -EFAULT;
+    ssize_t len = min(my_data->size - *offset, size);
+    if (len <= 0) return 0;
+    if (copy_from_user(my_data->buffer + *offset, user_buffer, len)) return -EFAULT;
     printk("write kernel buffer: %s\n", my_data->buffer);
     *offset += len;
     return len;
@@ -61,15 +57,15 @@ static int  char_release(struct inode *inode , struct file *filp){
     charIO_device_data_t *my_data = filp->private_data;
     printk("free kernel buffer: %s\n", my_data->buffer);
     kfree(my_data->buffer);
-	return 0;
+    return 0;
 }
 
 const struct file_operations charIO_fops = {
-	.owner = THIS_MODULE,
-	.open = char_open,
-	.read = char_read,
-	.write = char_write,
-	.release = char_release,
+    .owner = THIS_MODULE,
+    .open = char_open,
+    .read = char_read,
+    .write = char_write,
+    .release = char_release,
 };
 
 static int charIO_init(void) { 
