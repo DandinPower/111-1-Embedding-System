@@ -51,6 +51,7 @@ static ssize_t char_read(struct file *file, char __user *user_buffer,
         return 0;
     if (copy_to_user(user_buffer, my_data->buffer + *offset, len))
         return -EFAULT;
+    printk("read kernel buffer: %s\n", my_data->buffer);
     *offset += len;
     return len;
 }
@@ -65,12 +66,16 @@ static ssize_t  char_write(struct file *file, const char __user *user_buffer,
         return 0;
     if (copy_from_user(my_data->buffer + *offset, user_buffer, len))
         return -EFAULT;
+    printk("write kernel buffer: %s\n", my_data->buffer);
     *offset += len;
     return len;
 }
 
 static int  char_release(struct inode *inode , struct file *filp)
 {
+    charIO_device_data_t *my_data = filp->private_data;
+    printk("free kernel buffer: %s\n", my_data->buffer);
+    kfree(my_data->buffer);
 	return 0;
 }
 

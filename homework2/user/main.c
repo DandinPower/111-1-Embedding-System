@@ -11,8 +11,10 @@
 int main(void)
 {
 
-    char test[BUFFER_SIZE] = "Hello World!";
+    char test[BUFFER_SIZE] = "Hello_World!";
+	char test2[BUFFER_SIZE] = "Today is bad day QQ...";
     char response[BUFFER_SIZE];
+	char response2[BUFFER_SIZE];
     char fd[5];
 	int i;
 
@@ -35,9 +37,18 @@ int main(void)
 		}
 	}
 
-    write(fd[0], test, 12);
-    read(fd[0], response, 12);
-
-    printf("%s\n", response);
+    write(fd[0], test, strlen(test)+1);
+	write(fd[1], test2, strlen(test2)+1);
+    read(fd[0], response, strlen(test)+1);
+	read(fd[1], response2, strlen(test2)+1);
+	printf("%s\n", response);
+	printf("%s\n", response2);	
+	write(fd[0], test2, strlen(test2)+1);
+	write(fd[1], test, strlen(test)+1);
+	read(fd[0], response, strlen(test2)+1);
+	read(fd[1], response2, strlen(test)+1);
+	printf("%s\n", response);
+	printf("%s\n", response2);	
+	for (i = 0; i < 5; i++) close(fd[i]);
 	return 0;
 }
