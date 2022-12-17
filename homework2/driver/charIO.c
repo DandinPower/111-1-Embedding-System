@@ -5,6 +5,7 @@
 #include<linux/slab.h>
 #include <linux/cdev.h>
 #include <asm/uaccess.h>
+#include<linux/string.h>
 
 #define DRIVER_BUFFER_SIZE 10000                                                             // buffer的大小
 #define MY_MAJOR       42                                                                    // driver的major number
@@ -30,6 +31,7 @@ static int char_open(struct inode *inode, struct file *file) {
     file->private_data = my_data;                                                            // 由於open會拿到一個file物件 所以再將剛剛創建出來的結構物件放到file裡
     my_data->size = DRIVER_BUFFER_SIZE;
     my_data->buffer = (char *)kmalloc( my_data->size, GFP_KERNEL);                           // 宣告kernel buffer的記憶體空間
+    memset(my_data->buffer, '\0', sizeof(my_data->buffer));
     return 0;
 }
 
